@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="spi_master_tb_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="spi_master_tb" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="2,497.666 ns"></ZoomStartTime>
+      <ZoomEndTime time="3,497.667 ns"></ZoomEndTime>
+      <Cursor1Time time="3,331.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="230"></NameColumnWidth>
+      <ValueColumnWidth column_width="101"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="15" />
+   <wvobject fp_name="/spi_master_tb/clk" type="logic">
+      <obj_property name="ElementShortName">clk</obj_property>
+      <obj_property name="ObjectShortName">clk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/reset" type="logic">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/start" type="logic">
+      <obj_property name="ElementShortName">start</obj_property>
+      <obj_property name="ObjectShortName">start</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/tx_data" type="array">
+      <obj_property name="ElementShortName">tx_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/miso" type="logic">
+      <obj_property name="ElementShortName">miso</obj_property>
+      <obj_property name="ObjectShortName">miso</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/mosi" type="logic">
+      <obj_property name="ElementShortName">mosi</obj_property>
+      <obj_property name="ObjectShortName">mosi</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/sclk" type="logic">
+      <obj_property name="ElementShortName">sclk</obj_property>
+      <obj_property name="ObjectShortName">sclk</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/cs_n" type="logic">
+      <obj_property name="ElementShortName">cs_n</obj_property>
+      <obj_property name="ObjectShortName">cs_n</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/rx_data" type="array">
+      <obj_property name="ElementShortName">rx_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">rx_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/done" type="logic">
+      <obj_property name="ElementShortName">done</obj_property>
+      <obj_property name="ObjectShortName">done</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/expected_tx" type="array">
+      <obj_property name="ElementShortName">expected_tx[7:0]</obj_property>
+      <obj_property name="ObjectShortName">expected_tx[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/expected_rx" type="array">
+      <obj_property name="ElementShortName">expected_rx[7:0]</obj_property>
+      <obj_property name="ObjectShortName">expected_rx[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/tx_observed" type="array">
+      <obj_property name="ElementShortName">tx_observed[7:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_observed[7:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/tx_index" type="array">
+      <obj_property name="ElementShortName">tx_index[31:0]</obj_property>
+      <obj_property name="ObjectShortName">tx_index[31:0]</obj_property>
+   </wvobject>
+   <wvobject fp_name="/spi_master_tb/rx_index" type="array">
+      <obj_property name="ElementShortName">rx_index[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rx_index[31:0]</obj_property>
+   </wvobject>
+</wave_config>
