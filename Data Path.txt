@@ -1,0 +1,506 @@
+// Data Path
+module booth(
+  input logic   ldA,ldQ,ldM,clrA,clrQ,clrff,sftA,sftQ,addsub,clk,reset,decr,ldcnt,
+  input logic[15:0] data_in,
+  output logic qm1,eqz,q0,
+  output logic signed [31:0] product);
+  
+  logic signed [15:0] A,M,Q,Z;
+  logic [4:0] count;
+  assign q0 = Q[0];
+  
+  // to check for zero count
+  assign eqz = ~|count;
+  
+  //assign product
+  assign product = {A,Q};
+  
+  //DUT instantiation
+
+    // Accumulator shift register
+    shiftreg AR (
+        .s_in(A[15]),
+        .clk(clk),
+        .ld(ldA),
+        .clr(clrA),
+        .sft(sftA),
+        .data_in(Z),
+        .data_out(A)
+    );
+
+    // Multiplier shift register
+    shiftreg QR (
+        .s_in(A[0]),
+        .clk(clk),
+        .ld(ldQ),
+        .clr(clrQ),
+        .sft(sftQ),
+        .data_in(data_in),
+        .data_out(Q)
+    );
+
+    // Q-1 flip-flop
+    dff QM1 (
+        .d(Q[0]),
+        .clk(clk),
+        .clr(clrff),
+        .en(sftQ),
+        .q(qm1)
+    );
+
+    // Multiplicand register
+    PIPO MR (
+        .data_in(data_in),
+        .load(ldM),
+        .clk(clk),
+        .data_out(M)
+    );
+
+    // Arithmetic Logic Unit
+    ALU AS (
+        .in1(A),
+        .in2(M),
+        .addsub(addsub),
+        .out(Z)
+    );
+
+    // Iteration counter
+    counter CN (
+        .decr(decr),
+        .clk(clk),
+        .reset(reset),
+        .ldcnt(ldcnt),
+        .data_out(count)
+    );
+
+endmodule
+
+module shiftreg(
+  input logic s_in,clk,ld,clr,sft,
+  input logic signed[15:0] data_in,
+  output logic signed[15:0] data_out);
+  
+  always_ff @(posedge clk) begin
+    if(clr) begin
+      data_out <= 0;
+    end
+    else if(ld) begin
+      data_out <= data_in;
+    end
+    else if (sft) begin
+      data_out <= {s_in,data_out[15:1]};
+    end
+  end
+endmodule
+
+module PIPO(
+  input logic signed [15:0] data_in,
+  input logic load,clk,
+  output logic signed [15:0] data_out);
+  
+  always_ff @(posedge clk) begin
+    if (load) begin
+      data_out <= data_in;
+    end
+  end
+endmodule
+
+module dff(
+  input logic d,clk,clr,en,
+  output logic q);
+  
+  always_ff @(posedge clk) begin
+    if(clr) begin
+      q<=0;
+    end
+    else if (en)
+      q<=d;
+  end
+endmodule
+
+module ALU(
+  input logic signed[15:0] in1,in2,
+  input logic addsub,
+  output logic signed[15:0] out);
+  
+  always_comb begin
+    if(addsub==0) begin
+      out = in1-in2;
+    end
+    else
+      out = in1+in2;
+  end
+endmodule
+
+module counter(
+  input logic decr,clk,reset,ldcnt,
+  output logic [4:0] data_out);
+  always_ff @(posedge clk) begin
+    if (reset)
+      data_out <= 5'b00000;
+  	else if(ldcnt) begin
+      data_out <= 5'b10000;
+    end
+    else if (decr) begin
+      data_out <= data_out -1;
+    end
+  end
+endmodule
+
+// Control path
+
+
+module controller (
+    input logic clk, reset, start,
+    input logic q0, qm1, eqz,
+
+    output logic ldA, ldQ, ldM,
+    output logic clrA, clrQ, clrff,
+    output logic sftA, sftQ,
+    output logic addsub,
+    output logic decr, ldcnt,
+    output logic done
+);
+
+    typedef enum logic [2:0] {
+        IDLE,
+        INIT_M,
+        INIT_Q,
+        CHECK,
+        EXECUTE,
+        SHIFT,
+        CHECK_COUNT,
+        DONE
+    } state_t;
+
+    state_t state, next_state;
+
+    // State register
+    always_ff @(posedge clk) begin
+        if (reset)
+            state <= IDLE;
+        else
+            state <= next_state;
+    end
+
+    // Next-state logic
+    always_comb begin
+        next_state = state;
+
+        case (state)
+
+            IDLE:
+                if (start)
+                    next_state = INIT_M;
+
+            INIT_M:
+                next_state = INIT_Q;
+
+            INIT_Q:
+                next_state = CHECK;
+
+            CHECK:
+                if ({q0, qm1} == 2'b01 ||
+                    {q0, qm1} == 2'b10)
+                    next_state = EXECUTE;
+                else
+                    next_state = SHIFT;
+
+            EXECUTE:
+                next_state = SHIFT;
+
+            SHIFT:
+                next_state = CHECK_COUNT;
+
+            CHECK_COUNT:
+                if (eqz)
+                    next_state = DONE;
+                else
+                    next_state = CHECK;
+
+            DONE:
+                next_state = IDLE;
+
+            default:
+                next_state = IDLE;
+
+        endcase
+    end
+
+    // Output logic
+    always_comb begin
+
+        // Default values
+        ldA   = 0;
+        ldQ   = 0;
+        ldM   = 0;
+        clrA  = 0;
+        clrQ  = 0;
+        clrff = 0;
+        sftA  = 0;
+        sftQ  = 0;
+        addsub = 0;
+        decr  = 0;
+        ldcnt = 0;
+        done  = 0;
+
+        case (state)
+
+            INIT_M: begin
+                ldM   = 1;
+                clrA  = 1;
+                clrff = 1;
+                ldcnt = 1;
+            end
+
+            INIT_Q: begin
+                ldQ = 1;
+            end
+
+            EXECUTE: begin
+                ldA = 1;
+
+                if ({q0, qm1} == 2'b01)
+                    addsub = 1;
+                else
+                    addsub = 0;
+            end
+
+            SHIFT: begin
+                sftA = 1;
+                sftQ = 1;
+                decr = 1;
+            end
+
+            DONE: begin
+                done = 1;
+            end
+
+        endcase
+    end
+
+endmodule
+
+// top module
+
+module booth_top (
+    input logic clk,
+    input logic reset,
+    input logic start,
+    input logic [15:0] data_in,
+
+    output logic signed [31:0] product,
+    output logic done
+);
+
+    // Internal control signals
+    logic ldA, ldQ, ldM;
+    logic clrA, clrQ, clrff;
+    logic sftA, sftQ;
+    logic addsub;
+    logic decr, ldcnt;
+
+    // Internal status signals
+    logic q0, qm1, eqz;
+
+    // Datapath instantiation
+    booth DP (
+        .ldA(ldA),
+        .ldQ(ldQ),
+        .ldM(ldM),
+        .clrA(clrA),
+        .clrQ(clrQ),
+        .clrff(clrff),
+        .sftA(sftA),
+        .sftQ(sftQ),
+        .addsub(addsub),
+        .clk(clk),
+        .reset(reset),
+        .decr(decr),
+        .ldcnt(ldcnt),
+        .data_in(data_in),
+        .qm1(qm1),
+        .q0(q0),
+        .eqz(eqz),
+        .product(product)
+    );
+
+    // Controller instantiation
+    controller CU (
+        .clk(clk),
+        .reset(reset),
+        .start(start),
+        .q0(q0),
+        .qm1(qm1),
+        .eqz(eqz),
+
+        .ldA(ldA),
+        .ldQ(ldQ),
+        .ldM(ldM),
+        .clrA(clrA),
+        .clrQ(clrQ),
+        .clrff(clrff),
+        .sftA(sftA),
+        .sftQ(sftQ),
+        .addsub(addsub),
+        .decr(decr),
+        .ldcnt(ldcnt),
+        .done(done)
+    );
+
+endmodule
+
+
+  testbench 
+
+// Code your testbench here
+// or browse Examples
+
+module booth_tb;
+
+    // Testbench signals
+    logic clk;
+    logic reset;
+    logic start;
+    logic [15:0] data_in;
+
+    logic signed [31:0] product;
+    logic done;
+
+    logic signed [31:0] expected;
+
+    integer test_count;
+
+    // DUT instantiation
+    booth_top DUT (
+        .clk(clk),
+        .reset(reset),
+        .start(start),
+        .data_in(data_in),
+        .product(product),
+        .done(done)
+    );
+
+    // Clock generation: 50 MHz
+    initial begin
+        clk = 0;
+        forever #10 clk = ~clk;
+    end
+
+    // Task to apply operands and verify result
+    task automatic run_test(
+        input logic signed [15:0] M,
+        input logic signed [15:0] Q,
+        input logic signed [31:0] exp_result
+    );
+
+        begin
+
+            // Reset DUT
+            @(negedge clk);
+            reset = 1;
+            start = 0;
+            data_in = 0;
+
+            repeat(2) @(negedge clk);
+
+            // Release reset and provide multiplicand
+            reset = 0;
+            data_in = M;
+            start = 1;
+
+            // IDLE -> INIT_M
+            @(negedge clk);
+            start = 0;
+
+            // INIT_M captures M at the next rising edge
+            // Change input after M has been captured
+            @(negedge clk);
+            data_in = Q;
+
+            // INIT_Q captures Q at the next rising edge
+            @(negedge clk);
+            data_in = 0;
+
+            // Wait for multiplication to finish
+            wait(done === 1'b1);
+
+            #1;
+
+            expected = exp_result;
+            test_count = test_count + 1;
+
+            // Compare actual and expected products
+            if (product === expected) begin
+                $display("--------------------------------");
+                $display("TEST %0d PASSED", test_count);
+                $display("M        = %0d", M);
+                $display("Q        = %0d", Q);
+                $display("Expected = %0d", expected);
+                $display("Actual   = %0d", product);
+                $display("--------------------------------");
+            end
+            else begin
+                $display("--------------------------------");
+                $display("TEST %0d FAILED", test_count);
+                $display("M        = %0d", M);
+                $display("Q        = %0d", Q);
+                $display("Expected = %0d", expected);
+                $display("Actual   = %0d", product);
+                $display("--------------------------------");
+
+                $fatal(1, "Booth multiplier mismatch");
+            end
+
+            // Allow FSM to return to IDLE
+            @(negedge clk);
+
+        end
+
+    endtask
+
+
+    // Main test sequence
+    initial begin
+
+        reset = 1;
+        start = 0;
+        data_in = 0;
+        expected = 0;
+        test_count = 0;
+
+        // Test 1: Positive x Positive
+        run_test(16'sd13, 16'sd11, 32'sd143);
+
+        // Test 2: Negative x Positive
+        run_test(-16'sd13, 16'sd11, -32'sd143);
+
+        // Test 3: Positive x Negative
+        run_test(16'sd13, -16'sd11, -32'sd143);
+
+        // Test 4: Negative x Negative
+        run_test(-16'sd13, -16'sd11, 32'sd143);
+
+        // Test 5: Multiplication by zero
+        run_test(16'sd0, 16'sd25, 32'sd0);
+
+        // Test 6: Larger positive operands
+        run_test(16'sd100, 16'sd200, 32'sd20000);
+
+
+        $display("");
+        $display("================================");
+        $display("ALL %0d TESTS PASSED", test_count);
+        $display("================================");
+
+        $finish;
+
+    end
+
+    // Simulation watchdog
+    initial begin
+        #100000;
+        $fatal(1, "Simulation timeout");
+    end
+
+endmodule
