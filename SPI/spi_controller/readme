@@ -1,0 +1,53 @@
+## FPGA Implementation Results
+
+**Target FPGA:** AMD Zynq UltraScale+ ZU3EG (`xczu3eg-sfvc784-2-e`)  
+**Development Tool:** AMD Xilinx Vivado 2024.2.2  
+**Implementation Status:** Routed
+
+### Resource Utilization
+
+| Resource | Used | Utilization |
+|---|---:|---:|
+| CLB LUTs | 20 | 0.03% |
+| Flip-flops | 37 | 0.03% |
+| CLBs | 6 | 0.07% |
+| BRAM tiles | 0 | 0% |
+| DSP slices | 0 | 0% |
+| CARRY8 | 0 | 0% |
+| BUFGCE | 1 | 1.14% |
+
+### Timing Analysis
+
+| Metric | Result |
+|---|---:|
+| Primary clock target | 100 MHz |
+| Clock period | 10 ns |
+| Clock uncertainty | 0.2 ns |
+| Worst Negative Slack (WNS) | +7.431 ns |
+| Total Negative Slack (TNS) | 0 ns |
+| Worst Hold Slack (WHS) | +0.021 ns |
+| Total Hold Slack (THS) | 0 ns |
+| Failing setup endpoints | 0 |
+| Failing hold endpoints | 0 |
+
+### Timing Analysis Methodology
+
+1. Defined a 100 MHz primary system clock using an XDC constraint.
+2. Applied 0.2 ns clock uncertainty.
+3. Performed RTL simulation using Vivado.
+4. Executed synthesis, placement and routing.
+5. Evaluated setup and hold timing using Vivado Static Timing Analysis.
+6. Analysed FPGA resource utilization using the Vivado utilization report.
+
+*Timing results are based on the specified primary system clock constraint. External SPI interface delays and generated-clock constraints are not included in the current XDC.*
+
+### Module-Level Resource Breakdown
+
+| Module | LUTs | Registers |
+|---|---:|---:|
+| Bit Counter | 4 | 4 |
+| Clock Divider | 8 | 5 |
+| SPI Controller | 8 | 6 |
+| RX Register | 0 | 14 |
+| TX Register | 0 | 8 |
+| **Total** | **20** | **37** |
